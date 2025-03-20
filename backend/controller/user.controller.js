@@ -6,6 +6,18 @@ import { errorHandler } from "../utils/error.js";
 export const signup = async (request, response, next) => {
   const { username, email, password } = request.body;
 
+  // Check if a user with the same username already exists
+  const existingUserByUsername = await User.findOne({ username });
+  if (existingUserByUsername) {
+    return next(errorHandler(400, "Username already exists"));
+  }
+
+  // Check if a user with the same email already exists
+  const existingUserByEmail = await User.findOne({ email });
+  if (existingUserByEmail) {
+    return next(errorHandler(400, "Email already exists"));
+  }
+
   const hashedPassword = bcryptjs.hashSync(password, 10);
   const newUser = new User({ username, email, password: hashedPassword });
   try {
