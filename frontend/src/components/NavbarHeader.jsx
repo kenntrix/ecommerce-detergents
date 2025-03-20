@@ -1,4 +1,5 @@
 import { HiMenuAlt1, HiSearch } from "react-icons/hi";
+import { HiOutlineShoppingBag } from "react-icons/hi2";
 import {
   Dropdown,
   Label,
@@ -6,6 +7,7 @@ import {
   Navbar,
   Avatar,
   Button,
+  Card,
 } from "flowbite-react";
 import { useDispatch, useSelector } from "react-redux";
 import { FaTruck } from "react-icons/fa6";
@@ -14,11 +16,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/authService";
 import { signoutSuccess } from "../redux/reducers/authSlice";
 import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
+import { fetchUserCart } from "../services/cartService";
+import { RiDeleteBack2Line } from "react-icons/ri";
 
 const NavbarHeader = () => {
   const { currentUser } = useSelector((state) => state.authentication);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [cartItems, setCartItems] = useState([]); // State for cart items
+  const [loading, setLoading] = useState(false); // State for loading
+  const userId = currentUser?.user._id;
 
   const handleSignout = async () => {
     try {
@@ -31,6 +39,27 @@ const NavbarHeader = () => {
       toast.error("An error occurred while trying to logout out");
     }
   };
+
+  // Fetch cart data from the server
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        setLoading(true);
+
+        const response = await fetchUserCart(userId);
+        setCartItems(response?.cart.items);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [userId]);
+  console.log(cartItems);
+  console.log(cartItems.productId);
+
   return (
     <Navbar fluid className="border-b-2 shadow-lg ">
       <div className="w-full lg:px-5 lg:pl-3">
@@ -67,6 +96,9 @@ const NavbarHeader = () => {
                 <HiSearch className="h-6 w-6" />
               </button>
             </div>
+            <div>
+              <CartDropdown loading={loading} cartItems={cartItems} />
+            </div>
             <div className="hidden lg:block">
               <UserDropdown
                 handleSignout={handleSignout}
@@ -77,6 +109,72 @@ const NavbarHeader = () => {
         </div>
       </div>
     </Navbar>
+  );
+};
+
+const CartDropdown = ({ cartItems, loading }) => {
+  return (
+    <Dropdown
+      arrowIcon={false}
+      inline
+      label={
+        <span className="rounded-lg p-2 hover:bg-gray-100 rounded-full">
+          <span className="sr-only">Cart</span>
+          <HiOutlineShoppingBag className="text-2xl text-gray-500 hover:text-gray-900" />
+        </span>
+      }
+      className="w-[24rem] p-3"
+    >
+      {/* Cart Items */}
+      {loading ? (
+        <Dropdown.Item>Loading...</Dropdown.Item>
+      ) : cartItems.length === 0 ? (
+        <Dropdown.Item>Your cart is empty</Dropdown.Item>
+      ) : (
+        cartItems.map((item, index) => (
+          <Dropdown.Item
+            key={index}
+            className="flex items-center justify-between border border-gray-200 bg-white shadow-md hover:bg-gray-50"
+          >
+            {/* Image */}
+            <div className="w-1/4 flex justify-center">
+              <img
+                src={item.productId.images[0]} // Display the first image
+                alt={item.productId.name}
+                className="w-12 h-12 object-cover"
+              />
+            </div>
+            {/* Name and Price */}
+            <div className="w-1/2 flex flex-col text-left">
+              <h3 className="font-semibold">{item.productId.name}</h3>
+              <p className="text-gray-500">${item.productId.price}</p>
+            </div>
+
+            {/* Delete Icon */}
+            <div className="w-1/4 flex justify-center">
+              <button className="text-red-500 hover:text-red-700 focus:outline-none">
+                <RiDeleteBack2Line className="text-xl" />
+              </button>
+            </div>
+          </Dropdown.Item>
+        ))
+      )}
+
+      <Dropdown.Divider className="py-1" />
+
+      <Dropdown.Header>
+        <div className="flex justify-between">
+          <Link to={"/cart"}>
+            <Button color="gray" className="px-4">
+              View Cart
+            </Button>
+          </Link>
+          <Link to={"/checkout"}>
+            <Button className="bg-yellow-400 px-4">Check out</Button>
+          </Link>
+        </div>
+      </Dropdown.Header>
+    </Dropdown>
   );
 };
 

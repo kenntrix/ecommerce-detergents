@@ -9,6 +9,10 @@ import OnlyUserPrivateRoute from "./components/OnlyUserPrivateRoute.jsx";
 import OrdersPage from "./pages/users/OrdersPage.jsx";
 import UserProfilePage from "./pages/users/UserProfilePage.jsx";
 import TrackOrder from "./pages/users/TrackOrder.jsx";
+import CheckoutPage from "./pages/products/CheckoutPage.jsx";
+import FooterSection from "./components/FooterSection.jsx";
+import CartPage from "./pages/products/CartPage.jsx";
+import ProductItemsPage from "./pages/products/ProductItemsPage.jsx";
 
 export default function App() {
   return (
@@ -19,6 +23,9 @@ export default function App() {
         <Route path="/" element={<Homepage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/product/:id" element={<ProductItemsPage />} />
 
         <Route element={<OnlyUserPrivateRoute />}>
           <Route path="/my-orders" element={<OrdersPage />} />
@@ -26,6 +33,7 @@ export default function App() {
           <Route path="/user-profile" element={<UserProfilePage />} />
         </Route>
       </Routes>
+      <FooterSection />
     </BrowserRouter>
   );
 }
