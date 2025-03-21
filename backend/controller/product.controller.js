@@ -31,21 +31,69 @@ export const createProduct = async (request, response, next) => {
   }
 };
 
-// Get all products
+// Get all products for customers
 export const getAllProducts = async (request, response, next) => {
   try {
-    const products = await Product.find();
-    response.status(200).json(products);
+    const { searchTerm, inStock, outOfStock, productTypes, sort, limit } =
+      request.query;
+
+    let filter = {};
+
+    // Search by product name (case-insensitive)
+    if (searchTerm) {
+      filter.name = { $regex: searchTerm, $options: "i" };
+    }
+
+    // Filter by stock availability
+    if (inStock === "true" && outOfStock !== "true") {
+      filter.stock = { $gt: 0 }; // Products in stock
+    } else if (outOfStock === "true" && inStock !== "true") {
+      filter.stock = { $lte: 0 }; // Products out of stock
+    }
+
+    // Filter by category (previously product type)
+    if (productTypes) {
+      const typesArray = productTypes.split(",");
+      filter.category = { $in: typesArray };
+    }
+
+    // Sorting logic
+    let sortOption = {};
+    if (sort === "price_desc") {
+      sortOption.price = -1; // Highest to lowest price
+    } else if (sort === "price_asc") {
+      sortOption.price = 1; // Lowest to highest price
+    } else if (sort === "createdAt_desc") {
+      sortOption.createdAt = -1; // Newest first
+    } else if (sort === "createdAt_asc") {
+      sortOption.createdAt = 1; // Oldest first
+    }
+
+    // Convert limit to a number and set default (no limit if not provided)
+    const productLimit = limit ? parseInt(limit, 10) : undefined;
+
+    // Fetch products with optional limit
+    const products = await Product.find(filter)
+      .sort(sortOption)
+      .limit(productLimit);
+
+    response.status(200).json({
+      success: true,
+      count: products.length,
+      products,
+    });
   } catch (error) {
-    next(errorHandler(500, "Error fetching products"));
+    next(errorHandler(500, "Failed to get all products", error));
   }
 };
 
 // Get a single product by ID
 export const getProductById = async (request, response, next) => {
   try {
-    const product = await Product.findById(request.params.id);
+    const productId = request.params.id;
+    const product = await Product.findById(productId);
     if (!product) return next(errorHandler(404, "Product not found"));
+
     response.status(200).json(product);
   } catch (error) {
     next(errorHandler(500, "Error fetching product"));
