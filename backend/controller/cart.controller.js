@@ -1,20 +1,32 @@
 import Cart from "../models/cart.models.js";
+import Product from "../models/product.models.js";
 import { errorHandler } from "../utils/error.js";
 
 // Add to cart
 export const addToCart = async (request, response, next) => {
   try {
-    const { userId, productId, quantity } = request.body;
+    const { productId, quantity } = request.body;
+    const userId = request.user.id; // Extract user ID from the token
 
-    // Find the cart for the user
+    // Check if the product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return next(errorHandler(404, "Product not found"));
+    }
+
+    // Check if the product is already in the cart
     let cart = await Cart.findOne({ userId });
-
     if (!cart) {
-      // If no cart exists, create a new cart with the product
-      cart = new Cart({ userId, items: [{ productId, quantity }] });
+      cart = new Cart({ userId, items: [] });
+    }
+
+    const existingItem = cart.items.find(
+      (item) => item.productId === productId
+    );
+    if (existingItem) {
+      existingItem.quantity += quantity; // Increment quantity if product already exists
     } else {
-      // If a cart exists, ensure it contains only one product
-      cart.items = [{ productId, quantity }]; // Replace the existing product with the new one
+      cart.items.push({ productId, quantity }); // Add new product to the cart
     }
 
     // Save the updated cart

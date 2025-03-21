@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { FaCheck, FaMinus, FaPlus, FaRegHeart } from "react-icons/fa";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { RingLoader } from "react-spinners";
 import { fetchProductsByID } from "../../services/productService";
 import { Progress } from "flowbite-react";
+import { addToCart } from "../../services/cartService";
 
 const ProductItemPage = () => {
   const { id } = useParams(); // Get product ID from URL
@@ -13,6 +14,34 @@ const ProductItemPage = () => {
   const [mainImage, setMainImage] = useState(null);
   const [activeTab, setActiveTab] = useState("description");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false); // State for success message
+  const navigate = useNavigate();
+
+  // Function to handle adding the product to the cart
+  const handleAddToCart = async () => {
+    try {
+      setLoading(true); // Start loading
+      const response = await addToCart(product._id, quantity);
+
+      console.log(response);
+
+      if (response.success) {
+        setSuccess(true); // Set success state
+        setLoading(false); // Stop loading
+        setTimeout(() => setSuccess(false), 3000); // Clear success message after 3 seconds
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      // Check if the error is due to the user not being logged in
+      if (error === "You are not logged in. Please login or register.") {
+        toast.error("Please log in to add items to your cart.");
+        navigate("/login"); // Redirect to the login page
+      } else {
+        toast.error(error);
+      }
+      setLoading(false); // Stop loading in case of error
+    }
+  };
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -182,11 +211,25 @@ const ProductItemPage = () => {
             </div>
 
             <div className="flex gap-x-4 py-4 mt-5">
-              <button className="hover:bg-[#021639] hover:text-white uppercase border-2 border-[#021639] rounded-lg py-3 px-6">
-                Add to Cart
+              <button
+                onClick={handleAddToCart}
+                disabled={loading}
+                className={`uppercase rounded-lg py-3 px-6 ${
+                  loading
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : success
+                    ? "bg-green-500 text-white"
+                    : "hover:bg-[#021639] hover:text-white border-2 border-[#021639]"
+                }`}
+              >
+                {loading
+                  ? "Adding..."
+                  : success
+                  ? "Added to Cart!"
+                  : "Add to Cart"}
               </button>
               <Link
-                to={`/product/repayment-plan/${product._id}`}
+                to={`/product/checkout/${product._id}`}
                 state={{ product, quantity }}
               >
                 <button className="bg-[#021639] text-white hover:bg-[#ffd90c] hover:text-black uppercase font-semibold rounded-lg py-3 px-10">

@@ -13,3 +13,19 @@ export const fetchUserCart = async (userId) => {
     throw error.response?.data?.message;
   }
 };
+
+export const addToCart = async (productId, quantity) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/cart/add`,
+      { productId, quantity },
+      {
+        withCredentials: true,
+      }
+    );
+
+    return response?.data || null;
+  } catch (error) {
+    throw error.response?.data?.message;
+  }
+};
