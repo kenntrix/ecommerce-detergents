@@ -14,19 +14,28 @@ export const addToCart = async (request, response, next) => {
       return next(errorHandler(404, "Product not found"));
     }
 
-    // Check if the product is already in the cart
+    // Find or create the user's cart
     let cart = await Cart.findOne({ userId });
-    if (!cart) {
-      cart = new Cart({ userId, items: [] });
-    }
 
-    const existingItem = cart.items.find(
-      (item) => item.productId === productId
-    );
-    if (existingItem) {
-      existingItem.quantity += quantity; // Increment quantity if product already exists
+    if (!cart) {
+      // Create a new cart if none exists
+      cart = new Cart({
+        userId,
+        items: [{ productId, quantity }], // Initialize with the first item
+      });
     } else {
-      cart.items.push({ productId, quantity }); // Add new product to the cart
+      // Check if the product is already in the cart
+      const existingItemIndex = cart.items.findIndex(
+        (item) => item.productId.toString() === productId
+      );
+
+      if (existingItemIndex !== -1) {
+        // Update the quantity if the product already exists
+        cart.items[existingItemIndex].quantity += quantity;
+      } else {
+        // Add the product as a new item if it doesn't exist
+        cart.items.push({ productId, quantity });
+      }
     }
 
     // Save the updated cart

@@ -23,8 +23,6 @@ const ProductItemPage = () => {
       setLoading(true); // Start loading
       const response = await addToCart(product._id, quantity);
 
-      console.log(response);
-
       if (response.success) {
         setSuccess(true); // Set success state
         setLoading(false); // Stop loading
@@ -35,6 +33,29 @@ const ProductItemPage = () => {
       // Check if the error is due to the user not being logged in
       if (error === "You are not logged in. Please login or register.") {
         toast.error("Please log in to add items to your cart.");
+        navigate("/login"); // Redirect to the login page
+      } else {
+        toast.error(error);
+      }
+      setLoading(false); // Stop loading in case of error
+    }
+  };
+
+  // Function to handle the "Buy Now" action
+  const handleBuyNow = async () => {
+    try {
+      setLoading(true); // Start loading
+      const response = await addToCart(product._id, quantity);
+
+      if (response.success) {
+        navigate(`/product/checkout/${product._id}`);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      // Check if the error is due to the user not being logged in
+      if (error === "You are not logged in. Please login or register.") {
+        toast.error("Please log in to proceed with your purchase.");
         navigate("/login"); // Redirect to the login page
       } else {
         toast.error(error);
@@ -232,7 +253,11 @@ const ProductItemPage = () => {
                 to={`/product/checkout/${product._id}`}
                 state={{ product, quantity }}
               >
-                <button className="bg-[#021639] text-white hover:bg-[#ffd90c] hover:text-black uppercase font-semibold rounded-lg py-3 px-10">
+                <button
+                  onClick={handleBuyNow}
+                  disabled={loading}
+                  className="bg-[#021639] text-white hover:bg-[#ffd90c] hover:text-black uppercase font-semibold rounded-lg py-3 px-10"
+                >
                   Buy Now
                 </button>
               </Link>

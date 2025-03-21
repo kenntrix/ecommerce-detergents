@@ -40,6 +40,30 @@ const NavbarHeader = () => {
     }
   };
 
+  // Function to handle removing an item from the cart
+  const handleRemoveItem = async (productId) => {
+    try {
+      setLoading(true);
+
+      // Call the backend API to remove the item
+      // const response = await removeItemFromCart({ userId, productId });
+
+      if (response.success) {
+        // Update the cart items state by filtering out the removed item
+        setCartItems((prevItems) =>
+          prevItems.filter((item) => item.productId !== productId)
+        );
+        toast.success("Item removed from cart");
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+      toast.error("Failed to remove item from cart. Please try again.");
+      setLoading(false);
+    }
+  };
+
   // Fetch cart data from the server
   useEffect(() => {
     const fetchCart = async () => {
@@ -97,7 +121,11 @@ const NavbarHeader = () => {
               </button>
             </div>
             <div>
-              <CartDropdown loading={loading} cartItems={cartItems} />
+              <CartDropdown
+                loading={loading}
+                cartItems={cartItems}
+                handleRemoveItem={handleRemoveItem}
+              />
             </div>
             <div className="hidden lg:block">
               <UserDropdown
@@ -112,13 +140,13 @@ const NavbarHeader = () => {
   );
 };
 
-const CartDropdown = ({ cartItems, loading }) => {
+const CartDropdown = ({ cartItems, loading, handleRemoveItem }) => {
   return (
     <Dropdown
       arrowIcon={false}
       inline
       label={
-        <span className="rounded-lg p-2 hover:bg-gray-100 rounded-full">
+        <span className="p-2 hover:bg-gray-100 rounded-full">
           <span className="sr-only">Cart</span>
           <HiOutlineShoppingBag className="text-2xl text-gray-500 hover:text-gray-900" />
         </span>
@@ -152,7 +180,10 @@ const CartDropdown = ({ cartItems, loading }) => {
 
             {/* Delete Icon */}
             <div className="w-1/4 flex justify-center">
-              <button className="text-red-500 hover:text-red-700 focus:outline-none">
+              <button
+                onClick={() => handleRemoveItem(item.productId._id)}
+                className="text-red-500 hover:text-red-700 focus:outline-none"
+              >
                 <RiDeleteBack2Line className="text-xl" />
               </button>
             </div>
