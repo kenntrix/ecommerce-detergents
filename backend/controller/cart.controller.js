@@ -150,10 +150,11 @@ export const removeItemFromCart = async (request, response, next) => {
 export const clearCart = async (request, response, next) => {
   try {
     const userId = request.params.userId;
+    // Find the cart and update the items array to an empty array
     const cart = await Cart.findOneAndUpdate(
-      { userId },
-      { items: [] },
-      { new: true }
+      { userId }, // Match the cart by userId
+      { $set: { items: [] } }, // Set the items array to empty
+      { new: true } // Return the updated cart document
     );
     if (!cart) return next(errorHandler(404, "Cart not found"));
 

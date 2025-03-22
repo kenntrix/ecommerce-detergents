@@ -44,3 +44,17 @@ export const removeItemFromCart = async ({ productId }) => {
     throw error.response?.data?.message || "Failed to remove item from cart.";
   }
 };
+
+// Service to remove an item from the cart
+export const clearCart = async (userId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/api/cart/clear/${userId}`, {
+      withCredentials: true, // Include cookies for authentication
+    });
+
+    return response.data; // Return the response data
+  } catch (error) {
+    // Throw a meaningful error message if the request fails
+    throw error.response?.data?.message || "Failed to remove item from cart.";
+  }
+};

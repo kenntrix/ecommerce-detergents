@@ -1,6 +1,6 @@
 import { Button, TextInput } from "flowbite-react";
 import { useEffect, useState } from "react";
-import { fetchUserCart } from "../../services/cartService";
+import { clearCart, fetchUserCart } from "../../services/cartService";
 import { useSelector } from "react-redux";
 import { RingLoader } from "react-spinners";
 import { loadStripe } from "@stripe/stripe-js";
@@ -121,7 +121,7 @@ const CheckoutPage = () => {
 
         {/* Payment Form */}
         <Elements stripe={stripePromise}>
-          <CheckoutForm cartItems={cartItems} total={total} />
+          <CheckoutForm cartItems={cartItems} total={total} userId={userId} />
         </Elements>
       </div>
 
@@ -179,7 +179,7 @@ const CheckoutPage = () => {
   );
 };
 
-const CheckoutForm = ({ cartItems, total }) => {
+const CheckoutForm = ({ cartItems, total, userId }) => {
   const navigate = useNavigate();
   const stripe = useStripe();
   const elements = useElements();
@@ -232,6 +232,7 @@ const CheckoutForm = ({ cartItems, total }) => {
       } else {
         setLoading(false);
         toast.success("Payment successful!");
+        await clearCart(userId);
         setTimeout(() => {
           navigate("/product/order-success");
         }, 2000);

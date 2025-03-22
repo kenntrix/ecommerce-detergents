@@ -6,6 +6,7 @@ import { RingLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { fetchUserCart, removeItemFromCart } from "../../services/cartService";
 import { useSelector } from "react-redux";
+import { BsXCircle } from "react-icons/bs";
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]); // State for cart items
@@ -82,7 +83,16 @@ const CartPage = () => {
       )}
 
       {cartItems.length === 0 ? (
-        <p>Your cart is empty.</p>
+        <div className="flex flex-col items-center justify-center h-[50vh]">
+          <BsXCircle className="w-20 h-20 text-red-600 mb-4" />
+          <p className="text-xl text-gray-50-600">Your cart is empty.</p>
+          <Link
+            to="/products"
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300"
+          >
+            Continue Shopping
+          </Link>
+        </div>
       ) : (
         <>
           {/* List of Items */}
