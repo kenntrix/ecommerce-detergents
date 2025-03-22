@@ -31,7 +31,10 @@ const ProductItemPage = () => {
     } catch (error) {
       console.error("Error adding to cart:", error);
       // Check if the error is due to the user not being logged in
-      if (error === "You are not logged in. Please login or register.") {
+      if (
+        error === "You are not logged in. Please login or register." ||
+        error === "Invalid or expired token. Please login again."
+      ) {
         toast.error("Please log in to add items to your cart.");
         navigate("/login"); // Redirect to the login page
       } else {
@@ -48,13 +51,16 @@ const ProductItemPage = () => {
       const response = await addToCart(product._id, quantity);
 
       if (response.success) {
-        navigate(`/product/checkout/${product._id}`);
+        navigate("/product/checkout");
       }
       setLoading(false);
     } catch (error) {
       console.error("Error adding to cart:", error);
       // Check if the error is due to the user not being logged in
-      if (error === "You are not logged in. Please login or register.") {
+      if (
+        error === "You are not logged in. Please login or register." ||
+        error === "Invalid or expired token. Please login again."
+      ) {
         toast.error("Please log in to proceed with your purchase.");
         navigate("/login"); // Redirect to the login page
       } else {

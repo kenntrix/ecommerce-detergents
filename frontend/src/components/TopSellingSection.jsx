@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { fetchProducts } from "../services/productService";
 import ProductCard from "./ProductCard";
 import { RingLoader } from "react-spinners";
+import { Button } from "flowbite-react";
+import { Link } from "react-router-dom";
 
 const TopSellingSection = () => {
   const [topSellingProducts, setTopSellingProducts] = useState([]); // State for top-selling products
@@ -34,10 +36,17 @@ const TopSellingSection = () => {
 
       <h2 className="text-4xl font-semibold text-center mb-6">Top Selling</h2>
       {topSellingProducts.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 px-4 py-6">
-          {topSellingProducts.slice(0, 8).map((item) => (
-            <ProductCard key={item._id} item={item} />
-          ))}
+        <div className="flex flex-col items-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 px-4 py-6">
+            {topSellingProducts.slice(0, 12).map((item) => (
+              <ProductCard key={item._id} item={item} />
+            ))}
+          </div>
+          <div>
+            <Link to={"/products"}>
+              <Button>View All Products</Button>
+            </Link>
+          </div>
         </div>
       ) : (
         <p className="text-center text-gray-500 text-lg">

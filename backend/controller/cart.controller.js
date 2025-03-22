@@ -104,17 +104,49 @@ export const updateCartItem = async (request, response, next) => {
 // Remove item from cart
 export const removeItemFromCart = async (request, response, next) => {
   try {
-    const { userId, productId } = request.body;
+    const { productId } = request.body;
+    const userId = request.user.id;
+
+    // Validate productId
+    if (!productId) {
+      return next(errorHandler(400, "Product ID is required"));
+    }
+
+    // Find the user's cart
     const cart = await Cart.findOne({ userId });
 
-    if (!cart) return next(errorHandler(404, "Cart not found"));
+    if (!cart) {
+      return next(errorHandler(404, "Cart not found"));
+    }
 
-    cart.items = cart.items.filter((item) => item.productId != productId);
+    console.log("Cart before removal:", cart);
+
+    // Filter out the item to be removed
+    const initialItemCount = cart.items.length;
+    cart.items = cart.items.filter(
+      (item) => item.productId.toString() !== productId
+    );
+
+    // Check if the item was removed
+    if (cart.items.length === initialItemCount) {
+      return response.status(404).json({
+        success: false,
+        message: "Item not found in cart",
+      });
+    }
+
+    // Save the updated cart
     await cart.save();
-    response
-      .status(200)
-      .json({ success: true, message: "Removed cart item succesfully", cart });
+
+    console.log("Cart after removal:", cart);
+
+    response.status(200).json({
+      success: true,
+      message: "Removed cart item successfully",
+      cart,
+    });
   } catch (error) {
+    console.error("Error removing item from cart:", error);
     next(errorHandler(500, "Error removing item from cart"));
   }
 };

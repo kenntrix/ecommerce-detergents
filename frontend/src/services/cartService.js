@@ -29,3 +29,18 @@ export const addToCart = async (productId, quantity) => {
     throw error.response?.data?.message;
   }
 };
+
+// Service to remove an item from the cart
+export const removeItemFromCart = async ({ productId }) => {
+  try {
+    const response = await axios.delete(`${API_URL}/api/cart/remove`, {
+      data: { productId }, // Send productId in the request body
+      withCredentials: true, // Include cookies for authentication
+    });
+
+    return response.data; // Return the response data
+  } catch (error) {
+    // Throw a meaningful error message if the request fails
+    throw error.response?.data?.message || "Failed to remove item from cart.";
+  }
+};

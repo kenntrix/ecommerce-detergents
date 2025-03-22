@@ -7,7 +7,6 @@ import {
   Navbar,
   Avatar,
   Button,
-  Card,
 } from "flowbite-react";
 import { useDispatch, useSelector } from "react-redux";
 import { FaTruck } from "react-icons/fa6";
@@ -17,14 +16,16 @@ import { logoutUser } from "../services/authService";
 import { signoutSuccess } from "../redux/reducers/authSlice";
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
-import { fetchUserCart } from "../services/cartService";
+import { fetchUserCart, removeItemFromCart } from "../services/cartService";
 import { RiDeleteBack2Line } from "react-icons/ri";
+import { MdOutlineRemoveShoppingCart } from "react-icons/md";
 
 const NavbarHeader = () => {
   const { currentUser } = useSelector((state) => state.authentication);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [cartItems, setCartItems] = useState([]); // State for cart items
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false); // State for loading
   const userId = currentUser?.user._id;
 
@@ -36,7 +37,24 @@ const NavbarHeader = () => {
       navigate("/login");
     } catch (error) {
       console.log(error);
-      toast.error("An error occurred while trying to logout out");
+      toast.error("An error occurred while trying to log out");
+    }
+  };
+
+  const fetchCart = async (userId) => {
+    try {
+      setLoading(true);
+
+      const response = await fetchUserCart(userId);
+      if (!response.cart) {
+        throw new Error("Failed to fetch cart data.");
+      }
+
+      setCartItems(response.cart.items);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
     }
   };
 
@@ -46,46 +64,42 @@ const NavbarHeader = () => {
       setLoading(true);
 
       // Call the backend API to remove the item
-      // const response = await removeItemFromCart({ userId, productId });
-
-      if (response.success) {
-        // Update the cart items state by filtering out the removed item
-        setCartItems((prevItems) =>
-          prevItems.filter((item) => item.productId !== productId)
-        );
-        toast.success("Item removed from cart");
+      const response = await removeItemFromCart({ productId });
+      if (!response.success) {
+        throw new Error(response.message || "Failed to remove item from cart.");
       }
+
+      // Update the cart items state by filtering out the removed item
+      setCartItems((prevItems) =>
+        prevItems.filter((item) => item.productId !== productId)
+      );
+
+      await fetchCart(userId);
+      toast.success("Item removed from cart");
 
       setLoading(false);
     } catch (error) {
       console.error("Error removing item from cart:", error);
-      toast.error("Failed to remove item from cart. Please try again.");
+      toast.error(error.message || "Failed to remove item from cart.");
       setLoading(false);
     }
   };
 
   // Fetch cart data from the server
   useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        setLoading(true);
+    const interval = setInterval(() => {
+      fetchCart(userId);
+    }, 5000); // Fetch notifications every 5 seconds
 
-        const response = await fetchUserCart(userId);
-        setCartItems(response?.cart.items);
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setLoading(false);
-      }
-    };
+    // Initial fetch on component mount
+    fetchCart(userId);
 
-    fetchCart();
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, [userId]);
-  console.log(cartItems);
-  console.log(cartItems.productId);
 
   return (
-    <Navbar fluid className="border-b-2 shadow-lg ">
+    <Navbar fluid className="border-b-2 shadow-lg">
       <div className="w-full lg:px-5 lg:pl-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -122,7 +136,6 @@ const NavbarHeader = () => {
             </div>
             <div>
               <CartDropdown
-                loading={loading}
                 cartItems={cartItems}
                 handleRemoveItem={handleRemoveItem}
               />
@@ -140,7 +153,7 @@ const NavbarHeader = () => {
   );
 };
 
-const CartDropdown = ({ cartItems, loading, handleRemoveItem }) => {
+const CartDropdown = ({ cartItems, handleRemoveItem }) => {
   return (
     <Dropdown
       arrowIcon={false}
@@ -154,10 +167,11 @@ const CartDropdown = ({ cartItems, loading, handleRemoveItem }) => {
       className="w-[24rem] p-3"
     >
       {/* Cart Items */}
-      {loading ? (
-        <Dropdown.Item>Loading...</Dropdown.Item>
-      ) : cartItems.length === 0 ? (
-        <Dropdown.Item>Your cart is empty</Dropdown.Item>
+      {cartItems.length === 0 ? (
+        <Dropdown.Item className="flex text-center text-lg">
+          <MdOutlineRemoveShoppingCart className="text-3xl pr-2" />
+          Your cart is empty
+        </Dropdown.Item>
       ) : (
         cartItems.map((item, index) => (
           <Dropdown.Item
@@ -180,12 +194,12 @@ const CartDropdown = ({ cartItems, loading, handleRemoveItem }) => {
 
             {/* Delete Icon */}
             <div className="w-1/4 flex justify-center">
-              <button
+              <span
                 onClick={() => handleRemoveItem(item.productId._id)}
                 className="text-red-500 hover:text-red-700 focus:outline-none"
               >
                 <RiDeleteBack2Line className="text-xl" />
-              </button>
+              </span>
             </div>
           </Dropdown.Item>
         ))
@@ -200,7 +214,7 @@ const CartDropdown = ({ cartItems, loading, handleRemoveItem }) => {
               View Cart
             </Button>
           </Link>
-          <Link to={"/checkout"}>
+          <Link to={"/product/checkout"}>
             <Button className="bg-yellow-400 px-4">Check out</Button>
           </Link>
         </div>
