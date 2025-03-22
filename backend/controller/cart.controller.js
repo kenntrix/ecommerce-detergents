@@ -119,8 +119,6 @@ export const removeItemFromCart = async (request, response, next) => {
       return next(errorHandler(404, "Cart not found"));
     }
 
-    console.log("Cart before removal:", cart);
-
     // Filter out the item to be removed
     const initialItemCount = cart.items.length;
     cart.items = cart.items.filter(
@@ -138,15 +136,12 @@ export const removeItemFromCart = async (request, response, next) => {
     // Save the updated cart
     await cart.save();
 
-    console.log("Cart after removal:", cart);
-
     response.status(200).json({
       success: true,
       message: "Removed cart item successfully",
       cart,
     });
   } catch (error) {
-    console.error("Error removing item from cart:", error);
     next(errorHandler(500, "Error removing item from cart"));
   }
 };

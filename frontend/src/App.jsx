@@ -14,6 +14,8 @@ import FooterSection from "./components/FooterSection.jsx";
 import CartPage from "./pages/products/CartPage.jsx";
 import ProductItemsPage from "./pages/products/ProductItemsPage.jsx";
 import ProductPage from "./pages/products/ProductsPage.jsx";
+import OrderSuccessPage from "./pages/products/OrderSuccessPage.jsx";
+import OrderDetailsPage from "./pages/users/OrderDetailsPage.jsx";
 
 export default function App() {
   return (
@@ -28,6 +30,8 @@ export default function App() {
         <Route path="/product/checkout" element={<CheckoutPage />} />
         <Route path="/product/:id" element={<ProductItemsPage />} />
         <Route path="/products" element={<ProductPage />} />
+        <Route path="/product/order-success" element={<OrderSuccessPage />} />
+        <Route path="/my-orders/orders/:id" element={<OrderDetailsPage />} />
 
         <Route element={<OnlyUserPrivateRoute />}>
           <Route path="/my-orders" element={<OrdersPage />} />

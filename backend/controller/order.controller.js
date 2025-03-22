@@ -2,45 +2,6 @@ import Order from "../models/order.models.js";
 import { errorHandler } from "../utils/error.js";
 import Product from "../models/product.models.js";
 
-// Create an order
-export const createOrder = async (request, response) => {
-  try {
-    const { userId, items } = request.body;
-
-    // Check stock levels
-    for (const item of items) {
-      const product = await Product.findById(item.productId);
-      if (!product || product.stock < item.quantity) {
-        return next(
-          errorHandler(400, "Insufficient stock for one or more items")
-        );
-      }
-    }
-
-    // Reduce stock levels
-    for (const item of items) {
-      await Product.findByIdAndUpdate(item.productId, {
-        $inc: { stock: -item.quantity },
-      });
-    }
-
-    // Calculate total amount
-    const totalAmount = items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-
-    // Create order
-    const order = new Order({ userId, items, totalAmount });
-    await order.save();
-    response
-      .status(201)
-      .json({ success: true, message: "Order placed successfully", order });
-  } catch (error) {
-    next(errorHandler(500, "Error placing order"));
-  }
-};
-
 // Get all orders
 export const getAllOrders = async (request, response, next) => {
   try {
@@ -56,13 +17,44 @@ export const getAllOrders = async (request, response, next) => {
 // Get order by ID
 export const getOrderById = async (request, response, next) => {
   try {
-    const order = await Order.findById(request.params.id)
-      .populate("userId")
-      .populate("items.productId");
+    const orderId = request.params.id;
+
+    // Fetch the order by ID and populate related fields
+    const order = await Order.findById(orderId)
+      .populate("userId") // Populate user details
+      .populate("items.productId"); // Populate product details
+
     if (!order) return next(errorHandler(404, "Order not found"));
-    response.json(order);
+
+    response.status(200).json({ success: true, order });
   } catch (error) {
     next(errorHandler(500, "Error fetching order"));
+  }
+};
+
+// Get orders by user ID
+export const getOrdersByUserId = async (request, response, next) => {
+  try {
+    const userId = request.params.userId;
+
+    // Fetch all orders for the given user ID
+    const orders = await Order.find({ userId })
+      .populate("userId") // Populate user details
+      .populate("items.productId"); // Populate product details in the order items
+
+    if (!orders || orders.length === 0) {
+      return next(errorHandler(404, "No orders found for this user"));
+    }
+
+    // Return the list of orders
+    response.status(200).json({
+      success: true,
+      count: orders.length, // Include the count of orders
+      data: orders,
+    });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    next(errorHandler(500, "Error fetching orders"));
   }
 };
 

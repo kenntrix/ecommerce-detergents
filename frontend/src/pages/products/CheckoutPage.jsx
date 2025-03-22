@@ -3,6 +3,18 @@ import { useEffect, useState } from "react";
 import { fetchUserCart } from "../../services/cartService";
 import { useSelector } from "react-redux";
 import { RingLoader } from "react-spinners";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  CardElement,
+  Elements,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { toast } from "react-toastify";
+import { createPayments } from "../../services/paymentService";
+import { useNavigate } from "react-router-dom";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const CheckoutPage = () => {
   const [cartItems, setCartItems] = useState([]); // State for cart items
@@ -107,51 +119,10 @@ const CheckoutPage = () => {
           </div>
         </div>
 
-        <div>
-          <h1 className="font-semibold mb-4 text-3xl">Payment</h1>
-          <div className="mb-4">
-            <TextInput
-              id="cardNumber"
-              name="cardNumber"
-              required
-              placeholder="Card Number"
-              type="text"
-            />
-          </div>
-
-          <div className="flex gap-x-5 mb-4">
-            <div className="w-1/2">
-              <TextInput
-                id="date"
-                name="date"
-                required
-                placeholder="Expiration Date"
-                type="date"
-              />
-            </div>
-            <div className="w-1/2">
-              <TextInput
-                id="csv"
-                name="csv"
-                required
-                placeholder="Security Code"
-                type="number"
-              />
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <TextInput
-              id="name"
-              name="name"
-              required
-              placeholder="Card Holder Name"
-              type="text"
-            />
-          </div>
-
-          <Button className="w-full">Pay Now</Button>
-        </div>
+        {/* Payment Form */}
+        <Elements stripe={stripePromise}>
+          <CheckoutForm cartItems={cartItems} total={total} />
+        </Elements>
       </div>
 
       <div className="w-full bg-gray-100 p-6 rounded-lg">
@@ -205,6 +176,127 @@ const CheckoutPage = () => {
         )}
       </div>
     </div>
+  );
+};
+
+const CheckoutForm = ({ cartItems, total }) => {
+  const navigate = useNavigate();
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+
+  const handleNameChange = (event) => {
+    setName(event.target.value);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      toast.error("Stripe is not loaded.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Prepare the payment data
+      const paymentPayload = {
+        items: cartItems.map((item) => ({
+          productId: item.productId._id,
+          quantity: item.quantity,
+          price: item.productId.price,
+        })),
+        total_price: total,
+      };
+
+      // Step 1: Create a payment intent on the backend
+      const response = await createPayments(paymentPayload); // Use the createPayment service
+      const clientSecret = response?.clientSecret;
+
+      // Step 2: Confirm the payment with Stripe
+      const cardElement = elements.getElement(CardElement);
+      const payload = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: name,
+          },
+        },
+      });
+
+      if (payload.error) {
+        toast.error(payload.error.message);
+        setLoading(false);
+      } else {
+        setLoading(false);
+        toast.success("Payment successful!");
+        setTimeout(() => {
+          navigate("/product/order-success");
+        }, 2000);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Error during payment:", err);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h1 className="font-semibold mb-4 text-3xl">Payment</h1>
+
+      <div className="mb-4">
+        <label className="block text-gray-600 font-medium">
+          Cardholder Name
+        </label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          value={name}
+          onChange={handleNameChange}
+          className="w-full mt-1 px-3 border rounded-lg uppercase"
+          placeholder="John Doe"
+          required
+        />
+      </div>
+
+      {/* Card Element */}
+      <div className="mb-4">
+        <label className="block mb-2 font-semibold">Card Details</label>
+        <div className="p-3 border border-gray-500 rounded-lg mt-2">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: "16px",
+                  color: "#424770",
+                  "::placeholder": {
+                    color: "#aab7c4",
+                  },
+                },
+                invalid: {
+                  color: "#9e2146",
+                },
+              },
+              hidePostalCode: true,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        className="w-full bg-green-600 text-white enabled:hover:bg-green-400"
+        disabled={!stripe || loading}
+      >
+        {loading ? "Processing..." : "Pay Now"}
+      </Button>
+    </form>
   );
 };
 

@@ -1,21 +1,28 @@
-import express from 'express'   
-import { createOrder, deleteOrder, getAllOrders, getOrderById, updateOrderStatus } from '../controller/order.controller.js';
+import express from "express";
+import {
+  deleteOrder,
+  getAllOrders,
+  getOrderById,
+  getOrdersByUserId,
+  updateOrderStatus,
+} from "../controller/order.controller.js";
+import { verifyToken } from "../utils/verifyUser.js";
 
-const router = express.Router()
-
-// Create an order
-router.post('/orders', createOrder);
+const router = express.Router();
 
 // Get all orders
-router.get('/orders', getAllOrders);
+router.get("/", getAllOrders);
 
 // Get order by ID
-router.get('/orders/:id', getOrderById);
+router.get("/:id", verifyToken, getOrderById);
+
+// Route to fetch orders by user ID
+router.get("/user/:userId", verifyToken, getOrdersByUserId);
 
 // Update order status
-router.put('/orders/:id/status', updateOrderStatus);
+router.put("/:id/status", updateOrderStatus);
 
 // Delete an order
-router.delete('/orders/:id', deleteOrder);
+router.delete("/:id", deleteOrder);
 
-export default router 
+export default router;
